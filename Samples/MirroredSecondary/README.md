@@ -11,5 +11,5 @@ az container create --resource-group $your-resource-group --name kakfa-mirrormak
 ```
 
 
-![alt text](overview.png "Overview")
+![alt text](https://github.com/agowdamsft/haforeventhubs/blob/dev/Samples/MirroredSecondary/Overview.png "Overview")
 
