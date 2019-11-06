@@ -1,0 +1,123 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "eventHubNamespaceNamePrimary": {
+            "type": "String",
+            "metadata": {
+                "description": "Name of Event Hub namespace"
+            }
+        },
+        "eventHubNamespaceNameSecondary": {
+            "type": "String",
+            "metadata": {
+                "description": "Name of Event Hub namespace"
+            }
+        },
+        "aliasName": {
+            "type": "String",
+            "metadata": {
+                "description": "Name of Geo-Recovery Configuration Alias"
+            }
+        },
+        "eventhubSku": {
+            "defaultValue": "Standard",
+            "allowedValues": [
+                "Basic",
+                "Standard"
+            ],
+            "type": "String",
+            "metadata": {
+                "description": "The messaging tier for Event Hub namespace"
+            }
+        },
+        "skuCapacity": {
+            "defaultValue": 1,
+            "allowedValues": [
+                1,
+                2,
+                4
+            ],
+            "type": "Int",
+            "metadata": {
+                "description": "MessagingUnits for namespace"
+            }
+        },
+        "locationPrimaryNamepsace": {
+            "defaultValue": "northcentralus",
+            "type": "String",
+            "metadata": {
+                "description": "Location of Primary namespace"
+            }
+        },
+        "locationSecondaryNamepsace": {
+            "defaultValue": "southcentralus",
+            "type": "String",
+            "metadata": {
+                "description": "Location of Secondary namespace"
+            }
+        }
+    },
+    "variables": {
+        "defaultSASKeyName": "RootManageSharedAccessKey",
+        "defaultAuthRuleResourceId": "[resourceId('Microsoft.EventHub/namespaces/authorizationRules', parameters('eventHubNamespaceNamePrimary'), variables('defaultSASKeyName'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.EventHub/namespaces",
+            "apiVersion": "2017-04-01",
+            "name": "[parameters('eventHubNamespaceNameSecondary')]",
+            "location": "[parameters('locationSecondaryNamepsace')]",
+            "tags": {
+                "tag1": "value1",
+                "tag2": "value2"
+            },
+            "sku": {
+                "name": "[parameters('eventhubSku')]",
+                "tier": "[parameters('eventhubSku')]",
+                "capacity": "[parameters('skuCapacity')]"
+            }
+        },
+        {
+            "type": "Microsoft.EventHub/namespaces",
+            "apiVersion": "2017-04-01",
+            "name": "[parameters('eventHubNamespaceNamePrimary')]",
+            "location": "[parameters('locationPrimaryNamepsace')]",
+            "dependsOn": [
+                "[concat('Microsoft.EventHub/namespaces/', parameters('eventHubNamespaceNameSecondary'))]"
+            ],
+            "tags": {
+                "tag1": "value1",
+                "tag2": "value2"
+            },
+            "sku": {
+                "name": "[parameters('eventhubSku')]",
+                "tier": "[parameters('eventhubSku')]",
+                "capacity": "[parameters('skuCapacity')]"
+            },
+            "resources": [
+                {
+                    "type": "disasterRecoveryConfigs",
+                    "apiVersion": "2017-04-01",
+                    "name": "[parameters('aliasName')]",
+                    "dependsOn": [
+                        "[concat('Microsoft.EventHub/namespaces/', parameters('eventHubNamespaceNamePrimary'))]"
+                    ],
+                    "properties": {
+                        "partnerNamespace": "[resourceId('Microsoft.EventHub/namespaces', parameters('eventHubNamespaceNameSecondary'))]"
+                    }
+                }
+            ]
+        }
+    ],
+    "outputs": {
+        "NamespaceDefaultConnectionString": {
+            "type": "String",
+            "value": "[listkeys(variables('defaultAuthRuleResourceId'), '2017-04-01').primaryConnectionString]"
+        },
+        "DefaultSharedAccessPolicyPrimaryKey": {
+            "type": "String",
+            "value": "[listkeys(variables('defaultAuthRuleResourceId'), '2017-04-01').primaryKey]"
+        }
+    }
+}
