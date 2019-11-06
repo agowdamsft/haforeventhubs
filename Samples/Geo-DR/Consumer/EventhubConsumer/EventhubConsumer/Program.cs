@@ -8,7 +8,7 @@ namespace EventhubConsumer
         static async Task Main(string[] args)
         {
             Console.WriteLine("Registering EventProcessor...");
-            var ephManager = new EPHManager("", "", null);
+            var ephManager = new EPHManager("", "", "", null);
             await ephManager.StartAsync();
             
             Console.WriteLine("Receiving. Press ENTER to stop worker.");

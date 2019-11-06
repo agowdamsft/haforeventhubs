@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.Azure.EventHubs;
+using Microsoft.Azure.EventHubs.Processor;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -9,24 +11,62 @@ namespace EventhubConsumer
     public class EPHManager
     {
         private readonly string geoDrAliasConnectionString;
+        private readonly string eventHubName;
         private readonly string storageConnectionString;
         private readonly string[] storageContainers;
+        private EventProcessorHost currentEPH;
+        private DateTime lastFailover;
+        private int currentContainerIdx = 0;
 
-        public EPHManager(string geoDrAliasConnectionString, string storageConnectionString, string[] storageContainers)
+
+        public EPHManager(string geoDrAliasConnectionString, string eventHubName, string storageConnectionString, string[] storageContainers)
         {
             this.geoDrAliasConnectionString = geoDrAliasConnectionString;
+            this.eventHubName = eventHubName;
             this.storageConnectionString = storageConnectionString;
             this.storageContainers = storageContainers;
         }
 
-        public Task StartAsync(CancellationToken cts = default)
+        public async Task StartAsync(CancellationToken cts = default)
         {
-            return Task.CompletedTask;
+            if (currentEPH != null) throw new InvalidOperationException("already initialized");
+            GeoDrWatch.Instance.OnFailover += OnFailover;
+            await SetupEphAsync();
         }
 
-        public Task StopAsync(CancellationToken cts = default)
+        private void OnFailover(object sender, EventArgs e)
         {
-            return Task.CompletedTask;
+            lock (currentEPH)
+            {
+                if ((DateTime.UtcNow - lastFailover).TotalSeconds > 30)
+                {
+                    Console.WriteLine("Failover detected. Re-initializing EPH.");
+                    lastFailover = DateTime.UtcNow;
+                    Task.Run(async () =>
+                    {
+                        currentContainerIdx = (currentContainerIdx + 1) % storageContainers.Length;
+                        await currentEPH.UnregisterEventProcessorAsync();
+                        await SetupEphAsync();
+                    });
+                }
+            }
+        }
+
+        public async Task StopAsync(CancellationToken cts = default)
+        {
+            await currentEPH.UnregisterEventProcessorAsync();
+        }
+
+        private async Task SetupEphAsync()
+        {
+            currentEPH = new EventProcessorHost(
+                            eventHubName,
+                            PartitionReceiver.DefaultConsumerGroupName,
+                            geoDrAliasConnectionString,
+                            storageConnectionString,
+                            storageContainers[currentContainerIdx]);
+
+            await currentEPH.RegisterEventProcessorAsync<GeoDrEventConsumer>();
         }
     }
 }

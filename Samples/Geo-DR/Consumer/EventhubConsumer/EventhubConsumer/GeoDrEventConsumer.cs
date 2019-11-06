@@ -9,6 +9,7 @@ namespace EventhubConsumer
 {
     internal class GeoDrEventConsumer : IEventProcessor
     {
+        private bool failoverStarted;
         public Task CloseAsync(PartitionContext context, CloseReason reason)
         {
             Console.WriteLine($"Processor Shutting Down. Partition '{context.PartitionId}', Reason: '{reason}'.");
@@ -23,17 +24,25 @@ namespace EventhubConsumer
 
         public Task ProcessErrorAsync(PartitionContext context, Exception error)
         {
-            if (IsGeoDRException(error))
+            if (GeoDrWatch.IsGeoDRException(error))
             {
-                //FailoverSignal.Instance.InitiateFailover(this);
-                Console.ForegroundColor = ConsoleColor.Yellow;
+                failoverStarted = true;
+                GeoDrWatch.Instance.InitiateFailover(this);
             }
-            Console.WriteLine($"Error on Partition: {context.PartitionId}, Error: {error.Message}");
+            else
+            {
+                Console.WriteLine($"Error on Partition: {context.PartitionId}, Error: {error.Message}");
+            }
             return Task.CompletedTask;
         }
 
         public Task ProcessEventsAsync(PartitionContext context, IEnumerable<EventData> messages)
         {
+            if (failoverStarted)
+            {
+                return Task.CompletedTask;
+            }
+
             foreach (var eventData in messages)
             {
                 var data = Encoding.UTF8.GetString(eventData.Body.Array, eventData.Body.Offset, eventData.Body.Count);
@@ -41,13 +50,6 @@ namespace EventhubConsumer
             }
 
             return context.CheckpointAsync();
-        }
-
-        private static bool IsGeoDRException(Exception ex)
-        {
-            var unauthorized = ex as UnauthorizedAccessException;
-            return (unauthorized != null && unauthorized.HResult == -2147024891);
-            // message contains GeoDRFailOver
         }
     }
 }
