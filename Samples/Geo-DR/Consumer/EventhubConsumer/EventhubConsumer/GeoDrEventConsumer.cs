@@ -11,10 +11,12 @@ namespace EventhubConsumer
     {
         private bool failoverStarted;
         private readonly bool useCheckpointing;
+        private readonly IPartitionErrorHandler errorHandler;
 
-        public GeoDrEventConsumer(bool useCheckpointing)
+        public GeoDrEventConsumer(bool useCheckpointing, IPartitionErrorHandler errorHandler)
         {
             this.useCheckpointing = useCheckpointing;
+            this.errorHandler = errorHandler;
         }
 
         public Task CloseAsync(PartitionContext context, CloseReason reason)
@@ -29,18 +31,19 @@ namespace EventhubConsumer
             return Task.CompletedTask;
         }
 
-        public Task ProcessErrorAsync(PartitionContext context, Exception error)
+        public async Task ProcessErrorAsync(PartitionContext context, Exception error)
         {
-            if (GeoDrWatch.IsGeoDRException(error))
+            if (this.failoverStarted) return;
+
+            bool canContinue = await this.errorHandler?.ProcessErrorAsync(context, error);
+            if (!canContinue)
             {
-                failoverStarted = true;
-                GeoDrWatch.Instance.InitiateFailover(this);
+                this.failoverStarted = true;
             }
             else
             {
                 Console.WriteLine($"Error on Partition: {context.PartitionId}, Error: {error.Message}");
             }
-            return Task.CompletedTask;
         }
 
         public async Task ProcessEventsAsync(PartitionContext context, IEnumerable<EventData> messages)

@@ -20,7 +20,10 @@ namespace EventhubConsumer
 
             var containers = !String.IsNullOrEmpty(secondary) ? new string[2] { primary, secondary } : new string[1] { primary };
 
-            var ephManager = new EPHManager(config["EventHubConnectionString"], config["EventHubName"], config["StorageConnectionString"], containers);
+            var ephManager = new EPHManager(config["EventHubConnectionString"], 
+                                            config["EventHubName"], 
+                                            config["StorageConnectionString"], 
+                                            containers);
             await ephManager.StartAsync();
             
             Console.WriteLine("Receiving. Press ENTER to stop worker.");

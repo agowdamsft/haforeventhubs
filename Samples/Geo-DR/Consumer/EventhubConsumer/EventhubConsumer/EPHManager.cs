@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace EventhubConsumer
 {
-    public class EPHManager
+    public class EPHManager : IPartitionErrorHandler
     {
         private readonly string geoDrAliasConnectionString;
         private readonly string eventHubName;
@@ -28,26 +28,7 @@ namespace EventhubConsumer
         public async Task StartAsync(CancellationToken cts = default)
         {
             if (currentEPH != null) throw new InvalidOperationException("already initialized");
-            GeoDrWatch.Instance.OnFailover += OnFailover;
             await SetupEphAsync();
-        }
-
-        private void OnFailover(object sender, EventArgs e)
-        {
-            lock (currentEPH)
-            {
-                if ((DateTime.UtcNow - lastFailover).TotalSeconds > 30)
-                {
-                    Console.WriteLine("Failover detected. Re-initializing EPH.");
-                    lastFailover = DateTime.UtcNow;
-                    Task.Run(async () =>
-                    {
-                        currentContainerIdx = (currentContainerIdx + 1) % storageContainers.Length;
-                        await currentEPH.UnregisterEventProcessorAsync();
-                        await SetupEphAsync();
-                    });
-                }
-            }
         }
 
         public async Task StopAsync(CancellationToken cts = default)
@@ -69,7 +50,32 @@ namespace EventhubConsumer
             {
                 options.InitialOffsetProvider = (p) => EventPosition.FromEnqueuedTime(DateTime.UtcNow);
             }
-            await currentEPH.RegisterEventProcessorFactoryAsync(new GeoDrEventConsumerFactory(storageContainers.Length > 1), options);
+            await currentEPH.RegisterEventProcessorFactoryAsync(new GeoDrEventConsumerFactory(storageContainers.Length > 1, this), options);
+        }
+
+        public Task<bool> ProcessErrorAsync(PartitionContext context, Exception error)
+        {
+            const string geoDrFailoverToken = "GeoDRFailOver";
+            var isGeoDr = error.Message.IndexOf(geoDrFailoverToken) != -1;
+            if (isGeoDr)
+            {
+                lock (currentEPH)
+                {
+                    if ((DateTime.UtcNow - lastFailover).TotalSeconds > 30)
+                    {
+                        Console.WriteLine("Failover detected. Re-initializing EPH.");
+                        lastFailover = DateTime.UtcNow;
+                        Task.Run(async () =>
+                        {
+                            currentContainerIdx = (currentContainerIdx + 1) % storageContainers.Length;
+                            await currentEPH.UnregisterEventProcessorAsync();
+                            await SetupEphAsync();
+                        });
+                    }
+                }
+            }
+
+            return Task.FromResult(!isGeoDr);
         }
     }
 }

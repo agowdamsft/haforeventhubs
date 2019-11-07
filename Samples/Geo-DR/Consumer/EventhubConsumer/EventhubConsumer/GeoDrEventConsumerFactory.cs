@@ -1,22 +1,21 @@
 ﻿using Microsoft.Azure.EventHubs.Processor;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace EventhubConsumer
 {
     class GeoDrEventConsumerFactory : IEventProcessorFactory
     {
         private readonly bool useCheckpointing;
+        private readonly IPartitionErrorHandler errorHandler;
 
-        public GeoDrEventConsumerFactory(bool useCheckpointing)
+        public GeoDrEventConsumerFactory(bool useCheckpointing, IPartitionErrorHandler errorHandler)
         {
             this.useCheckpointing = useCheckpointing;
+            this.errorHandler = errorHandler;
         }
 
         public IEventProcessor CreateEventProcessor(PartitionContext context)
         {
-            return new GeoDrEventConsumer(useCheckpointing);
+            return new GeoDrEventConsumer(this.useCheckpointing, this.errorHandler);
         }
     }
 }
