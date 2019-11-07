@@ -5,13 +5,13 @@
         "eventHubNamespaceNamePrimary": {
             "type": "String",
             "metadata": {
-                "description": "Name of Event Hub namespace"
+                "description": "Name of primary Event Hub namespace"
             }
         },
         "eventHubNamespaceNameSecondary": {
             "type": "String",
             "metadata": {
-                "description": "Name of Event Hub namespace"
+                "description": "Name of secondary Event Hub namespace"
             }
         },
         "aliasName": {
@@ -60,7 +60,9 @@
     },
     "variables": {
         "defaultSASKeyName": "RootManageSharedAccessKey",
-        "defaultAuthRuleResourceId": "[resourceId('Microsoft.EventHub/namespaces/authorizationRules', parameters('eventHubNamespaceNamePrimary'), variables('defaultSASKeyName'))]"
+        "defaultAuthRuleResourceId": "[resourceId('Microsoft.EventHub/namespaces/authorizationRules', parameters('eventHubNamespaceNamePrimary'), variables('defaultSASKeyName'))]",
+        "secondaryAuthRuleResourceId": "[resourceId('Microsoft.EventHub/namespaces/authorizationRules', parameters('eventHubNamespaceNameSecondary'), variables('defaultSASKeyName'))]"
+
     },
     "resources": [
         {
@@ -118,6 +120,14 @@
         "DefaultSharedAccessPolicyPrimaryKey": {
             "type": "String",
             "value": "[listkeys(variables('defaultAuthRuleResourceId'), '2017-04-01').primaryKey]"
+        },
+        "ConnectionStringSecondaryNamespace": {
+            "type": "String",
+            "value": "[listkeys(variables('secondaryAuthRuleResourceId'), '2017-04-01').primaryConnectionString]"
+        },
+         "PrimaryKeySecondaryNamespace": {
+            "type": "String",
+            "value": "[listkeys(variables('secondaryAuthRuleResourceId'), '2017-04-01').primaryKey]"
         }
     }
 }
