@@ -14,11 +14,13 @@ You can Use the template below to create the namespaces and to attach a DR confi
 
 Copy the output values of this template into the connectionstring placeholders below to spin up a container for a load generator and an instance of the MirrorMaker tool.
 
+This command* runs the MirrorMaker instance, providing the two connectionstrings. This assumes the eventhub configuration has the Kafka surface enabled (providing a compatible kafka endpoint for the Event Hub).
 
 ```
 az container create --resource-group $rgname --name mirrormaker --image confluentinc/cp-kafka --gitrepo-url https://github.com/djrosanova/EventHubsMirrorMaker --gitrepo-mount-path /mnt/EventHubsMirrorMaker --command-line "/bin/bash ./mnt/EventHubsMirrorMaker/ehmirror/mirrorstart.sh " --environment-variables SOURCE_CON_STR="[YOUR-SOURCE-EVENTHUB-CONNECTIONSTRING]" DEST_CON_STR="[YOUR-DESTINATION-EVENTHUB-CONNECTIONSTRING]"
 ```
 
+This command spins up the load generator (one of the tools in the CP-CAFKA image used):
 ```
 az container create --resource-group mmrg24173 --name loadgenerator --image confluentinc/cp-kafka --gitrepo-url https://github.com/agowdamsft/haforeventhubs --gitrepo-mount-path /mnt/MirrorMaker --environment-variables SOURCE_CON_STR="[YOUR-SOURCE-EVENTHUB-CONNECTIONSTRING]" --command-line "/bin/bash ./mnt/MirrorMaker/Samples/MirroredSecondary/loadgenerator.sh -d $SOURCE_CON_STR" --restart-policy OnFailure
 ```
