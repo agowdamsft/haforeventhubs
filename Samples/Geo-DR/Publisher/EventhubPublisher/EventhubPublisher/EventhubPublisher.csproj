@@ -7,13 +7,15 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.EventHubs" Version="4.1.0" />
-    <PackageReference Include="Microsoft.Azure.EventHubs.Processor" Version="4.1.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.0.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="appsettings.local.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -21,5 +23,5 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  
+
 </Project>

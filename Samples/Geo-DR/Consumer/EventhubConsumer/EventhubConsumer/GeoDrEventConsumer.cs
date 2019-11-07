@@ -10,6 +10,13 @@ namespace EventhubConsumer
     internal class GeoDrEventConsumer : IEventProcessor
     {
         private bool failoverStarted;
+        private readonly bool useCheckpointing;
+
+        public GeoDrEventConsumer(bool useCheckpointing)
+        {
+            this.useCheckpointing = useCheckpointing;
+        }
+
         public Task CloseAsync(PartitionContext context, CloseReason reason)
         {
             Console.WriteLine($"Processor Shutting Down. Partition '{context.PartitionId}', Reason: '{reason}'.");
@@ -36,11 +43,11 @@ namespace EventhubConsumer
             return Task.CompletedTask;
         }
 
-        public Task ProcessEventsAsync(PartitionContext context, IEnumerable<EventData> messages)
+        public async Task ProcessEventsAsync(PartitionContext context, IEnumerable<EventData> messages)
         {
             if (failoverStarted)
             {
-                return Task.CompletedTask;
+                return;
             }
 
             foreach (var eventData in messages)
@@ -49,7 +56,10 @@ namespace EventhubConsumer
                 Console.WriteLine($"{DateTime.Now}: Message received. Partition: '{context.PartitionId}', Data: '{data}'");
             }
 
-            return context.CheckpointAsync();
+            if (useCheckpointing)
+            {
+                await context.CheckpointAsync();
+            }
         }
     }
 }

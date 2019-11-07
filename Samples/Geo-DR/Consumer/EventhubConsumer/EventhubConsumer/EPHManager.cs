@@ -1,8 +1,6 @@
 ﻿using Microsoft.Azure.EventHubs;
 using Microsoft.Azure.EventHubs.Processor;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -66,7 +64,8 @@ namespace EventhubConsumer
                             storageConnectionString,
                             storageContainers[currentContainerIdx]);
 
-            await currentEPH.RegisterEventProcessorAsync<GeoDrEventConsumer>();
+            EventProcessorOptions optins = new EventProcessorOptions();
+            await currentEPH.RegisterEventProcessorFactoryAsync(new GeoDrEventConsumerFactory(storageContainers.Length > 1));
         }
     }
 }
