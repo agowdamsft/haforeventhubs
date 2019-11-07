@@ -17,7 +17,7 @@ The publisher is transparently sending messages to the new eventhub in case of a
 ### Partition indexes
 When reading from patitions, EPH will keep the index information in memory. As long as the event hub you are reading from does not change, there is no problem with that. Once the event hub does failover, the stored in memory index will be pointing to a location that does not exist in the failover hub.
 
-
+![Indexing overview](EventHub_GeoDR_Index.jpg)
 
 The consumer starts consuming events from the primary event hub region and reaches index 99 on partion 0. At that point a the primary hub fails and we trigger a failover to the secondary hub. The setup uses the alias and eventually, the connection is re-established to the secondary region. EPH is still using the same instance and the index it was using in the primary region will cause to try start reading from the same index: 99. Since there is no message replication, that index does not exist and the read will fail. 
 
