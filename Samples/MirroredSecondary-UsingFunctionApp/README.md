@@ -1,8 +1,9 @@
-***Introduction***
+*Creating a mirrored secondary Event Hub using a Function*
+**Introduction**
 
 This sample describes an alternative to setting up replication from the primary event hub to the secondary utilising an Azure Function App (see other Mirrored Secondary sample for info on setting this up with Confluence MirrorMaker). Using a Functions App with the Event Hub trigger allows us to replicate across messages (non-realtime) at a high throughput as Functions can spawn up mutiple instances to scale to the load of incoming messages. 
 
-***Scenario overview***
+**Scenario overview**
 
 Like the MirrorMaker sample, use this template to create the namespaces and to attach a DR configuration to it so that and alias will be created for producers and consumer to connect to (this eliminates the need to change those clients' configuration mid-flight).
 
@@ -10,4 +11,4 @@ Like the MirrorMaker sample, use this template to create the namespaces and to a
     <img src="https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.png"/>
 </a>
 
-When the resources are deployed look up the outputs from the template
+When the resources are deployed look up the outputs from the template to get the primary and secondary event hub connection strings and note these down - you'll need them for the Function's app settings. 
