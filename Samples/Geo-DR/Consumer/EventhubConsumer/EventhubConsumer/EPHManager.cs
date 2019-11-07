@@ -64,8 +64,12 @@ namespace EventhubConsumer
                             storageConnectionString,
                             storageContainers[currentContainerIdx]);
 
-            EventProcessorOptions optins = new EventProcessorOptions();
-            await currentEPH.RegisterEventProcessorFactoryAsync(new GeoDrEventConsumerFactory(storageContainers.Length > 1));
+            var options = new EventProcessorOptions();
+            if (storageContainers.Length == 1)
+            {
+                options.InitialOffsetProvider = (p) => EventPosition.FromEnqueuedTime(DateTime.UtcNow);
+            }
+            await currentEPH.RegisterEventProcessorFactoryAsync(new GeoDrEventConsumerFactory(storageContainers.Length > 1), options);
         }
     }
 }
