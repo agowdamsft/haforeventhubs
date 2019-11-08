@@ -29,7 +29,7 @@ Once this is deployed, head to the Function App's app settings (click on the dep
 
 Now your infrastructure is set up. To test your Function replication it's time to start throwing some load at the primary event hub. You can do this in several ways; we used <a href="https://github.com/Azure-Samples/durable-functions-producer-consumer" target="_blank">this producer simulator available on GitHub.</a>
 
-We configured the producer to send X messages, and as you can see from the screenshot below once this stabilised this created between 180-200 MB per minute of incoming messages on the primary event hub:
+We configured the producer to send 100,000 messages at an 8KB payload, and as you can see from the screenshot below once this stabilised this created between 180-200 MB per minute of incoming messages on the primary event hub:
 
 <img src="https://raw.githubusercontent.com/agowdamsft/haforeventhubs/master/Samples/MirroredSecondary-UsingFunctionApp/test_throughput.jpg"/>
 
