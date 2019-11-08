@@ -3,7 +3,7 @@
 
 This sample describes an alternative to setting up replication from the primary event hub to the secondary utilising an Azure Function App (see other Mirrored Secondary sample for info on setting this up with Confluence MirrorMaker). Using a Functions App with the Event Hub trigger allows us to replicate across messages (non-realtime) at a high throughput as Functions can spawn up multiple instances to scale to the load of incoming messages. 
 
->> Note: this is purely an experiment to see if Functions can handle enough throughput to serve as a viable replication option (results of tests are shared later in this readme). Use at your own risk!
+> Note: this is purely an experiment to see if Functions can handle enough throughput to serve as a viable replication option (results of tests are shared later in this readme). Use at your own risk!
 
 ## Deploy the resources ##
 
@@ -27,4 +27,10 @@ Once this is deployed, head to the Function App's app settings (click on the dep
 
 <img src="https://raw.githubusercontent.com/agowdamsft/haforeventhubs/master/Samples/MirroredSecondary-UsingFunctionApp/function_app_settings1.jpg"/>
 
-Now your infrastructure is set up. To test your Function replication it's time to start throwing some load at the primary event hub. You can do this in several ways; I used <a href="https://github.com/Azure-Samples/durable-functions-producer-consumer" target="_blank">this producer simulator available on GitHub.</a>
+Now your infrastructure is set up. To test your Function replication it's time to start throwing some load at the primary event hub. You can do this in several ways; we used <a href="https://github.com/Azure-Samples/durable-functions-producer-consumer" target="_blank">this producer simulator available on GitHub.</a>
+
+We configured the producer to send X messages, and as you can see from the screenshot below once this stabilised this created between 180-200 MB per minute of incoming messages on the primary event hub:
+
+<img src="https://raw.githubusercontent.com/agowdamsft/haforeventhubs/master/Samples/MirroredSecondary-UsingFunctionApp/test_throughput.jpg"/>
+
+As the Functions scaled out, you can see on the secondary line that the replication passed around 150-160 MB per minute of messages into the secondary event hub, so a little behind where it needs to be to keep up with the high rate of incoming messages, but not far off. It's important to note this is at 4 partitions on the primary hub, and adjusting this partition count and the maxBatchSize in the Function host.json could yield further improvements. 
